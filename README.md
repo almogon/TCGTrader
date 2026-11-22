@@ -47,3 +47,7 @@ Seguridad: la clave no se copia en la imagen (se pasa al arrancar desde `.env.lo
 1. Importa el repositorio en Vercel (preset Vite).
 2. En Settings > Environment Variables añade `RAPIDAPI_KEY` con tu clave.
 3. Despliega. La carpeta `api/` se publica como funciones serverless.
+
+### Credenciales propias (botón *Authenticate*)
+
+En la tarjeta de búsqueda, **Authenticate** abre un modal donde cada persona puede guardar su propio host y API key de RapidAPI en el `localStorage` del navegador. Se envían a `/api/*` en las cabeceras `x-tcg-host` y `x-tcg-key` y sustituyen a `RAPIDAPI_KEY` y al host por defecto (`pokemon-tcg-api.p.rapidapi.com`). Solo se aceptan hosts `*.rapidapi.com`. Con credenciales propias, `RAPIDAPI_KEY` es opcional en el servidor.
