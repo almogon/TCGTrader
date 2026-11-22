@@ -117,7 +117,8 @@ export async function searchCards(params: SearchParams, signal?: AbortSignal): P
   if (episode !== null) qs.set('episode', String(episode));
   qs.set('sort', sort);
   qs.set('page', String(page));
-  const r = await fetch(`/api/search?${qs.toString()}`, { signal, headers: authHeaders() });
+  // Relative URL: works at the root (Docker, Vercel) and under a sub-path proxy (almogon.com/tcg-trader/).
+  const r = await fetch(`api/search?${qs.toString()}`, { signal, headers: authHeaders() });
   let body: unknown = null;
   try {
     body = await r.json();
@@ -171,7 +172,7 @@ interface EpisodesPage {
 }
 
 async function fetchEpisodesPage(page: number): Promise<EpisodesPage> {
-  const r = await fetch(`/api/episodes?page=${page}`, { headers: authHeaders() });
+  const r = await fetch(`api/episodes?page=${page}`, { headers: authHeaders() });
   let body: unknown = null;
   try {
     body = await r.json();

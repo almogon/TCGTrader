@@ -44,9 +44,19 @@ Seguridad: la clave no se copia en la imagen (se pasa al arrancar desde `.env.lo
 
 ## Despliegue en Vercel
 
-1. Importa el repositorio en Vercel (preset Vite).
-2. En Settings > Environment Variables añade `RAPIDAPI_KEY` con tu clave.
-3. Despliega. La carpeta `api/` se publica como funciones serverless.
+El despliegue es **solo manual**: `vercel.json` desactiva los despliegues automáticos por push/merge y la action `Deploy to Vercel` (`.github/workflows/deploy-vercel.yml`) publica en producción cuando se lanza a mano.
+
+Preparación (una vez):
+
+1. Crea el proyecto en Vercel (preset Vite), importando el repo o con `npx vercel link` en local.
+2. En Settings > Environment Variables añade `RAPIDAPI_KEY` (y `APITCG_API_KEY` si se usa) para Production.
+3. En GitHub, Settings > Secrets and variables > Actions, crea:
+   - `VERCEL_TOKEN`: token de vercel.com/account/tokens.
+   - `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID`: están en `.vercel/project.json` tras `npx vercel link`, o en Settings del proyecto/equipo en Vercel.
+
+Desplegar: GitHub > Actions > *Deploy to Vercel* > *Run workflow*. La URL sale en el resumen de la ejecución. La carpeta `api/` se publica como funciones serverless.
+
+Rutas relativas: el build usa `base: './'` y el front llama a `api/...` sin barra inicial, así que la misma app funciona en la raíz (Docker, dominio de Vercel) y detrás de un proxy con subruta como `almogon.com/tcg-trader/` (con barra final).
 
 ### Credenciales propias (botón *Authenticate*)
 
