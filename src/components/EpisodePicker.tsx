@@ -3,8 +3,8 @@ import type { EpisodeInfo } from '../types';
 
 interface Props {
   episodes: EpisodeInfo[];
-  value: number | null;
-  onChange: (id: number | null) => void;
+  value: string | number | null;
+  onChange: (id: string | number | null) => void;
   disabled?: boolean;
 }
 
@@ -43,7 +43,7 @@ export default function EpisodePicker({ episodes, value, onChange, disabled }: P
     };
   }, [open]);
 
-  function pick(id: number | null) {
+  function pick(id: string | number | null) {
     onChange(id);
     setOpen(false);
     setFilter('');

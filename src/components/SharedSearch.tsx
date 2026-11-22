@@ -1,8 +1,24 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { formatEur, loadEpisodes, priceFor, searchCards, type SearchParams, type SortOption } from '../api';
+import {
+  currentHost,
+  formatEur,
+  loadEpisodes,
+  priceFor,
+  searchCards,
+  type SearchParams,
+  type SortOption,
+} from '../api';
+import type { HostId, HostInfo } from '../hostCatalog';
 import { PRICE_LANGS, type CardInfo, type EpisodeInfo, type PriceLang } from '../types';
 import AuthModal from './AuthModal';
 import EpisodePicker from './EpisodePicker';
+
+const SORT_LABELS: Record<SortOption, string> = {
+  relevance: 'Relevancia',
+  price_highest: 'Precio: mayor primero',
+  price_lowest: 'Precio: menor primero',
+};
+const SORT_LABELS_ORDER = Object.keys(SORT_LABELS) as SortOption[];
 
 /** Precio en el idioma elegido; si no existe se muestra el EU, que es el que se conserva al añadir. */
 const priceShown = (c: CardInfo, lang: PriceLang) => priceFor(c, lang) ?? priceFor(c, 'EU');
@@ -16,7 +32,7 @@ interface Props {
 
 export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: Props) {
   const [query, setQuery] = useState('');
-  const [episode, setEpisode] = useState<number | null>(null);
+  const [episode, setEpisode] = useState<string | number | null>(null);
   const [sort, setSort] = useState<SortOption>('relevance');
 
   const [episodes, setEpisodes] = useState<EpisodeInfo[]>([]);
@@ -36,12 +52,33 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
   const [authOpen, setAuthOpen] = useState(false);
   const [authVersion, setAuthVersion] = useState(0);
 
+  const [host, setHost] = useState<HostInfo>(currentHost);
+  const hostIdRef = useRef<HostId>(host.id);
+  const { capabilities } = host;
+  const episodeEff = capabilities.episodes ? episode : null;
+
   useEffect(() => {
     let alive = true;
+    const next = currentHost();
+    if (next.id !== hostIdRef.current) {
+      // Cambio de host: se descarta lo mostrado del anterior.
+      hostIdRef.current = next.id;
+      abortRef.current?.abort();
+      setEpisode(null);
+      setEpisodes([]);
+      setSent(null);
+      setCards([]);
+      setPage(1);
+      setTotalPages(1);
+      setLoading(false);
+      setError(null);
+    }
+    setHost(next);
+    setSort((s) => (next.capabilities.sorts.includes(s) ? s : 'relevance'));
     setEpisodesLoading(true);
     setEpisodesError(null);
-    // Tras cambiar credenciales solo se fuerza la descarga si antes no había colecciones.
-    loadEpisodes(authVersion > 0 && episodes.length === 0)
+    // La caché de colecciones es por host, basta con pedirla sin forzar.
+    loadEpisodes()
       .then((list) => {
         if (alive) setEpisodes(list);
       })
@@ -65,7 +102,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
     [],
   );
 
-  const canSearch = (query.trim().length >= 2 || episode !== null) && !loading;
+  const canSearch = (query.trim().length >= 2 || episodeEff !== null) && !loading;
 
   async function run(params: SearchParams) {
     abortRef.current?.abort();
@@ -91,7 +128,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canSearch) return;
-    void run({ q: query.trim(), episode, sort, page: 1 });
+    void run({ q: query.trim(), episode: episodeEff, sort, page: 1 });
   }
 
   function goTo(p: number) {
@@ -118,21 +155,23 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
-        <div className="field">
-          <span className="field-label">Colección</span>
-          {episodesLoading ? (
-            <p className="muted field-note">Cargando colecciones…</p>
-          ) : (
-            <>
-              <EpisodePicker episodes={episodes} value={episode} onChange={setEpisode} />
-              {episodesError && (
-                <p className="error field-note">
-                  {episodesError}. Puedes buscar sin colección.
-                </p>
-              )}
-            </>
-          )}
-        </div>
+        {capabilities.episodes && (
+          <div className="field">
+            <span className="field-label">Colección</span>
+            {episodesLoading ? (
+              <p className="muted field-note">Cargando colecciones…</p>
+            ) : (
+              <>
+                <EpisodePicker episodes={episodes} value={episode} onChange={setEpisode} />
+                {episodesError && (
+                  <p className="error field-note">
+                    {episodesError}. Puedes buscar sin colección.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
         <label>
           Idioma del precio
           <select value={lang} onChange={(e) => onLangChange(e.target.value as PriceLang)}>
@@ -146,9 +185,11 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
         <label>
           Ordenar por
           <select value={sort} onChange={(e) => setSort(e.target.value as SortOption)}>
-            <option value="relevance">Relevancia</option>
-            <option value="price_highest">Precio: mayor primero</option>
-            <option value="price_lowest">Precio: menor primero</option>
+            {SORT_LABELS_ORDER.filter((s) => capabilities.sorts.includes(s)).map((s) => (
+              <option key={s} value={s}>
+                {SORT_LABELS[s]}
+              </option>
+            ))}
           </select>
         </label>
       </form>

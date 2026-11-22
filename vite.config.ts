@@ -1,6 +1,7 @@
 ﻿import { defineConfig, loadEnv, type Connect, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { handleEpisodes, handleSearch, resolveCredentials, type Credentials } from './api/_normalize.js';
+import { handleEpisodes, handleSearch, resolveHost } from './api/_core.js';
+import type { CardHost } from './api/_hosts/CardHost.js';
 
 type Out = { status: number; body: unknown };
 
@@ -8,7 +9,7 @@ type Out = { status: number; body: unknown };
 function apiPlugin(mode: string): Plugin {
   const register = (middlewares: Connect.Server) => {
     const env = loadEnv(mode, process.cwd(), '');
-    const route = (path: string, run: (p: URLSearchParams, creds: Credentials) => Promise<Out>) => {
+    const route = (path: string, run: (p: URLSearchParams, host: CardHost, key: string) => Promise<Out>) => {
       middlewares.use(path, async (req, res) => {
         const send = (status: number, body: unknown) => {
           res.statusCode = status;
@@ -16,20 +17,21 @@ function apiPlugin(mode: string): Plugin {
           res.end(JSON.stringify(body));
         };
         if (req.method !== 'GET') return send(405, { error: 'Método no permitido' });
-        const creds = resolveCredentials(req.headers, env.RAPIDAPI_KEY);
-        if ('error' in creds) return send(creds.status, { error: creds.error });
+        const resolved = resolveHost(req.headers, env);
+        if ('error' in resolved) return send(resolved.status, { error: resolved.error });
         const url = new URL(req.url ?? '', 'http://localhost');
-        const out = await run(url.searchParams, creds);
+        const out = await run(url.searchParams, resolved.host, resolved.key);
         send(out.status, out.body);
       });
     };
-    route('/api/search', (p, creds) =>
+    route('/api/search', (p, host, key) =>
       handleSearch(
         { q: p.get('q'), episode: p.get('episode'), sort: p.get('sort'), page: p.get('page') },
-        creds,
+        host,
+        key,
       ),
     );
-    route('/api/episodes', (p, creds) => handleEpisodes(p.get('page'), creds));
+    route('/api/episodes', (p, host, key) => handleEpisodes(p.get('page'), host, key));
   };
   return {
     name: 'local-api',
