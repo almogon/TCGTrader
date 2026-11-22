@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatEur } from '../api';
-import { MAX_OPTIONAL_PER_SIDE, type Card, type PriceLang } from '../types';
+import { MAX_OPTIONAL_PER_SIDE, PRICE_LANGS, type Card, type PriceLang } from '../types';
 
 interface Props {
   title: string;
@@ -89,9 +89,11 @@ export default function BagColumn({ title, cards, onTogglePin, onRemove, onPrice
                   value={c.lang ?? 'EU'}
                   onChange={(e) => onLangChange(c.uid, e.target.value as PriceLang)}
                 >
-                  <option value="EU">EU</option>
-                  <option value="DE">DE</option>
-                  <option value="ES">ES</option>
+                  {PRICE_LANGS.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
                 </select>
               )}
               <PriceInput card={c} onPriceChange={onPriceChange} />

@@ -15,7 +15,7 @@ function CardList({ cards }: { cards: Card[] }) {
         <li key={c.uid}>
           <span>
             {c.pinned && <span title="Fija">📌 </span>}
-            {c.name}
+            {c.name} ({c.lang ?? 'EU'})
           </span>
           <span>{c.price !== null ? formatEur(c.price) : '—'}</span>
         </li>
