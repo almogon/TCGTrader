@@ -28,12 +28,12 @@ export function resolveHost(
   const one = (v: string | string[] | undefined) =>
     (Array.isArray(v) ? v[0] : v)?.trim() || "";
   const host = getHost(one(headers["x-tcg-host"]) || DEFAULT_HOST_ID);
-  if (!host) return { status: 400, error: "Host no válido" };
+  if (!host) return { status: 400, error: "Invalid host" };
   const key = one(headers["x-tcg-key"]) || env[host.envKeyVar] || "";
   if (!key) {
     return {
       status: 500,
-      error: `Falta la API key: configúrala en Authenticate o en ${host.envKeyVar}`,
+      error: `Missing API key: set it in Authenticate or in ${host.envKeyVar}`,
     };
   }
   return { host, key };
@@ -46,7 +46,7 @@ function parsePage(pageParam: string | null | undefined): number {
     : 1;
 }
 
-const NO_EPISODES = "Este host no admite colecciones";
+const NO_EPISODES = "This host does not support sets";
 
 /** Validates params against the host capabilities and delegates the search to the host. */
 export async function handleSearch(
@@ -59,7 +59,7 @@ export async function handleSearch(
     return {
       status: 400,
       body: {
-        error: "El texto de búsqueda debe tener entre 2 y 60 caracteres",
+        error: "Search text must be between 2 and 60 characters",
       },
     };
   }
@@ -69,19 +69,19 @@ export async function handleSearch(
     if (/^\d+$/.test(episodeRaw)) {
       const n = parseInt(episodeRaw, 10);
       if (n <= 0) {
-        return { status: 400, body: { error: "Colección no válida" } };
+        return { status: 400, body: { error: "Invalid set" } };
       }
       episode = n;
     } else if (/^[a-z0-9][a-z0-9-]{0,99}$/.test(episodeRaw)) {
       episode = episodeRaw;
     } else {
-      return { status: 400, body: { error: "Colección no válida" } };
+      return { status: 400, body: { error: "Invalid set" } };
     }
   }
   if (!query && episode === null) {
     return {
       status: 400,
-      body: { error: "Indica un nombre de carta o una colección" },
+      body: { error: "Enter a card name or a set" },
     };
   }
   if (episode !== null && !host.capabilities.episodes) {

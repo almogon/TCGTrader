@@ -86,7 +86,7 @@ export class TcggoHost extends CardHost {
     if (typeof episode === "string") {
       return Promise.resolve({
         status: 400,
-        body: { error: "Colección no válida" },
+        body: { error: "Invalid set" },
       });
     }
     const base =

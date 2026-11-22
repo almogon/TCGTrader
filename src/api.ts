@@ -255,5 +255,5 @@ export function resolveBag<T extends CardInfo & { customPrice?: number | null; l
   }));
 }
 
-const eur = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+const eur = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
 export const formatEur = (n: number) => eur.format(n);

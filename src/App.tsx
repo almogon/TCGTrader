@@ -107,14 +107,14 @@ export default function App() {
     <div className="app">
       <header>
         <h1>TCG Trader</h1>
-        <p className="muted">Encuentra intercambios equilibrados de cartas Pokémon según su precio en Cardmarket.</p>
+        <p className="muted">Find balanced Pokémon card trades based on Cardmarket prices.</p>
       </header>
 
       <SharedSearch onGive={add(setGive)} onReceive={add(setReceive)} lang={lang} onLangChange={setLang} />
 
       <main className="board">
         <BagColumn
-          title="Ofrezco"
+          title="I give"
           cards={giveP}
           onPriceChange={setPrice(setGive)}
           onLangChange={setCardLang(setGive)}
@@ -126,7 +126,7 @@ export default function App() {
             Trade
           </button>
           <label>
-            Tolerancia (%)
+            Tolerance (%)
             <input
               type="number"
               min={0}
@@ -136,7 +136,7 @@ export default function App() {
             />
           </label>
           <label>
-            Nº de resultados
+            Max results
             <input
               type="number"
               min={1}
@@ -147,7 +147,7 @@ export default function App() {
           </label>
         </div>
         <BagColumn
-          title="Recibo"
+          title="I receive"
           cards={receiveP}
           onPriceChange={setPrice(setReceive)}
           onLangChange={setCardLang(setReceive)}

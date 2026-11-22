@@ -16,7 +16,7 @@ function apiPlugin(mode: string): Plugin {
           res.setHeader('Content-Type', 'application/json; charset=utf-8');
           res.end(JSON.stringify(body));
         };
-        if (req.method !== 'GET') return send(405, { error: 'Método no permitido' });
+        if (req.method !== 'GET') return send(405, { error: 'Method not allowed' });
         const resolved = resolveHost(req.headers, env);
         if ('error' in resolved) return send(resolved.status, { error: resolved.error });
         const url = new URL(req.url ?? '', 'http://localhost');

@@ -112,7 +112,7 @@ export function findTrades(give: Card[], receive: Card[], opts: TradeOptions): T
     return {
       options: [],
       bestDiffPct: null,
-      error: 'Cada lado necesita al menos una carta con precio',
+      error: 'Each side needs at least one card with a price',
     };
   }
 
@@ -123,7 +123,7 @@ export function findTrades(give: Card[], receive: Card[], opts: TradeOptions): T
     return {
       options: [],
       bestDiffPct: null,
-      error: `Máximo ${MAX_OPTIONAL_PER_SIDE} cartas opcionales por lado`,
+      error: `Maximum ${MAX_OPTIONAL_PER_SIDE} optional cards per side`,
     };
   }
 

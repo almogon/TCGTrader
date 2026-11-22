@@ -29,8 +29,8 @@ function PriceInput({ card, onPriceChange }: { card: Card; onPriceChange: Props[
       <input
         type="text"
         inputMode="decimal"
-        aria-label="Precio en euros"
-        placeholder="sin precio"
+        aria-label="Price in euros"
+        placeholder="no price"
         value={draft ?? fmtInput(card.price)}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
@@ -47,7 +47,7 @@ function PriceInput({ card, onPriceChange }: { card: Card; onPriceChange: Props[
         <button
           type="button"
           className="restore"
-          title="Restaurar precio de la API"
+          title="Restore API price"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             setDraft(null);
@@ -69,7 +69,7 @@ export default function BagColumn({ title, cards, onTogglePin, onRemove, onPrice
     <section className="column">
       <h2>{title}</h2>
       {cards.length === 0 ? (
-        <p className="muted empty">Aún no hay cartas.</p>
+        <p className="muted empty">No cards yet.</p>
       ) : (
         <ul className="bag">
           {cards.map((c) => (
@@ -78,14 +78,14 @@ export default function BagColumn({ title, cards, onTogglePin, onRemove, onPrice
               <div className="info">
                 <strong>{c.name}</strong>
                 <small>
-                  {c.price === null ? 'Sin precio: no cuenta' : ''}
+                  {c.price === null ? 'No price: not counted' : ''}
                   {c.setName ? `${c.price === null ? ' · ' : ''}${c.setName}` : ''}
                 </small>
               </div>
               {c.prices && (
                 <select
                   className="lang-select"
-                  aria-label="Idioma del precio"
+                  aria-label="Price language"
                   value={c.lang ?? 'EU'}
                   onChange={(e) => onLangChange(c.uid, e.target.value as PriceLang)}
                 >
@@ -100,13 +100,13 @@ export default function BagColumn({ title, cards, onTogglePin, onRemove, onPrice
               <button
                 type="button"
                 className={c.pinned ? 'pin active' : 'pin'}
-                title="Fijar: aparecerá en todas las combinaciones"
+                title="Pin: include in every combination"
                 aria-pressed={c.pinned}
                 onClick={() => onTogglePin(c.uid)}
               >
                 📌
               </button>
-              <button type="button" className="remove" title="Quitar" onClick={() => onRemove(c.uid)}>
+              <button type="button" className="remove" title="Remove" onClick={() => onRemove(c.uid)}>
                 ✕
               </button>
             </li>
@@ -117,11 +117,11 @@ export default function BagColumn({ title, cards, onTogglePin, onRemove, onPrice
         <span>
           Total: <strong>{formatEur(total)}</strong>
         </span>
-        <span>Opcionales: {optional}</span>
+        <span>Optional: {optional}</span>
       </div>
       {optional > MAX_OPTIONAL_PER_SIDE && (
         <p className="error">
-          Demasiadas cartas opcionales ({optional} &gt; {MAX_OPTIONAL_PER_SIDE}). Fija algunas o quita otras.
+          Too many optional cards ({optional} &gt; {MAX_OPTIONAL_PER_SIDE}). Pin some or remove others.
         </p>
       )}
     </section>

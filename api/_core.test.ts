@@ -10,7 +10,7 @@ describe("resolveHost", () => {
   });
   it("rechaza hosts desconocidos con 400", () => {
     const r = resolveHost({ "x-tcg-host": "evil.com" }, { RAPIDAPI_KEY: "k" });
-    expect(r).toEqual({ status: 400, error: "Host no válido" });
+    expect(r).toEqual({ status: 400, error: "Invalid host" });
   });
   it("la key de cabecera gana al env", () => {
     const r = resolveHost({ "x-tcg-key": "hdr" }, { RAPIDAPI_KEY: "env" });
@@ -86,7 +86,7 @@ describe("handleSearch / handleEpisodes", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 401 }));
     vi.spyOn(console, "error").mockImplementation(() => {});
     const out = await handleEpisodes("1", host, "k");
-    expect(out).toEqual({ status: 502, body: { error: "La clave de la API no es válida" } });
+    expect(out).toEqual({ status: 502, body: { error: "Invalid API key" } });
   });
 });
 

@@ -57,7 +57,7 @@ export default function AuthModal({ open, onClose, onSaved }: Props) {
       <form onSubmit={onSubmit}>
         <h2>Authenticate</h2>
         <p className="muted">
-          Elige el host de la API. La key se guarda solo en este navegador, por host, y sustituye a la del servidor.
+          Choose the API host. The key is stored only in this browser, per host, and replaces the server key.
         </p>
         <label>
           Host
@@ -78,7 +78,7 @@ export default function AuthModal({ open, onClose, onSaved }: Props) {
           API key
           <input
             type="password"
-            placeholder="Vacío = key del servidor"
+            placeholder="Empty = server key"
             value={keys[hostId] ?? ''}
             onChange={(e) => setKeys((k) => ({ ...k, [hostId]: e.target.value }))}
             autoComplete="off"
@@ -88,15 +88,15 @@ export default function AuthModal({ open, onClose, onSaved }: Props) {
         <div className="auth-actions">
           {Boolean(savedKeys[hostId]) && (
             <button type="button" className="danger" onClick={onClear}>
-              Borrar
+              Delete
             </button>
           )}
           <span className="spacer" />
           <button type="button" onClick={onClose}>
-            Cancelar
+            Cancel
           </button>
           <button type="submit" className="primary">
-            Guardar
+            Save
           </button>
         </div>
       </form>

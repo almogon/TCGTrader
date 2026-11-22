@@ -14,9 +14,9 @@ import AuthModal from './AuthModal';
 import EpisodePicker from './EpisodePicker';
 
 const SORT_LABELS: Record<SortOption, string> = {
-  relevance: 'Relevancia',
-  price_highest: 'Precio: mayor primero',
-  price_lowest: 'Precio: menor primero',
+  relevance: 'Relevance',
+  price_highest: 'Price: high to low',
+  price_lowest: 'Price: low to high',
 };
 const SORT_LABELS_ORDER = Object.keys(SORT_LABELS) as SortOption[];
 
@@ -83,7 +83,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
         if (alive) setEpisodes(list);
       })
       .catch((e) => {
-        if (alive) setEpisodesError(e instanceof Error ? e.message : 'No se pudieron cargar las colecciones');
+        if (alive) setEpisodesError(e instanceof Error ? e.message : 'Could not load sets');
       })
       .finally(() => {
         if (alive) setEpisodesLoading(false);
@@ -119,7 +119,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
       setLoading(false);
     } catch (e) {
       if (ctrl.signal.aborted) return;
-      setError(e instanceof Error ? e.message : 'Error de búsqueda');
+      setError(e instanceof Error ? e.message : 'Search error');
       setCards([]);
       setLoading(false);
     }
@@ -147,25 +147,25 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
     <section className="shared-search">
       <form id="shared-search-form" className="search-form" onSubmit={onSubmit}>
         <label>
-          Carta
+          Card
           <input
             type="search"
-            placeholder="Nombre (mín. 2 letras)…"
+            placeholder="Name (min. 2 letters)…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
         {capabilities.episodes && (
           <div className="field">
-            <span className="field-label">Colección</span>
+            <span className="field-label">Set</span>
             {episodesLoading ? (
-              <p className="muted field-note">Cargando colecciones…</p>
+              <p className="muted field-note">Loading sets…</p>
             ) : (
               <>
                 <EpisodePicker episodes={episodes} value={episode} onChange={setEpisode} />
                 {episodesError && (
                   <p className="error field-note">
-                    {episodesError}. Puedes buscar sin colección.
+                    {episodesError}. You can still search without a set.
                   </p>
                 )}
               </>
@@ -173,7 +173,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
           </div>
         )}
         <label>
-          Idioma del precio
+          Price language
           <select value={lang} onChange={(e) => onLangChange(e.target.value as PriceLang)}>
             {PRICE_LANGS.map((l) => (
               <option key={l} value={l}>
@@ -183,7 +183,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
           </select>
         </label>
         <label>
-          Ordenar por
+          Sort by
           <select value={sort} onChange={(e) => setSort(e.target.value as SortOption)}>
             {SORT_LABELS_ORDER.filter((s) => capabilities.sorts.includes(s)).map((s) => (
               <option key={s} value={s}>
@@ -195,7 +195,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
       </form>
       <div className="search-actions">
         <button type="submit" form="shared-search-form" className="primary" disabled={!canSearch}>
-          {loading ? 'Buscando…' : 'Buscar'}
+          {loading ? 'Searching…' : 'Search'}
         </button>
         <button type="button" onClick={() => setAuthOpen(true)}>
           Authenticate
@@ -206,19 +206,19 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
       {sent && (
         <div className="results-box">
           {error && <p className="error">{error}</p>}
-          {loading && !error && <p className="muted">Buscando…</p>}
-          {!loading && !error && cards.length === 0 && <p className="muted">Sin resultados</p>}
+          {loading && !error && <p className="muted">Searching…</p>}
+          {!loading && !error && cards.length === 0 && <p className="muted">No results</p>}
           {cards.length > 0 && (
             <div className="table-wrap">
               <table className="cards-table">
                 <thead>
                   <tr>
                     <th></th>
-                    <th>Carta</th>
-                    <th>Colección</th>
-                    <th>Nº</th>
-                    <th>Rareza</th>
-                    <th>Precio</th>
+                    <th>Card</th>
+                    <th>Set</th>
+                    <th>No.</th>
+                    <th>Rarity</th>
+                    <th>Price</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -235,7 +235,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
                       <td>{c.cardNumber ?? '—'}</td>
                       <td>{c.rarity ?? '—'}</td>
                       <td className={priceShown(c, lang) === null ? 'price muted' : 'price'}>
-                        {priceShown(c, lang) === null ? 'sin precio' : formatEur(priceShown(c, lang)!)}
+                        {priceShown(c, lang) === null ? 'no price' : formatEur(priceShown(c, lang)!)}
                       </td>
                       <td className="actions">
                         <button
@@ -243,14 +243,14 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
                           className={flash === `${c.id}-give` ? 'added' : ''}
                           onClick={() => add('give', c)}
                         >
-                          Ofrezco
+                          Give
                         </button>
                         <button
                           type="button"
                           className={flash === `${c.id}-receive` ? 'added' : ''}
                           onClick={() => add('receive', c)}
                         >
-                          Recibo
+                          Receive
                         </button>
                       </td>
                     </tr>
@@ -262,13 +262,13 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
           {(cards.length > 0 || page > 1) && (
             <div className="pager">
               <button type="button" disabled={loading || page <= 1} onClick={() => goTo(page - 1)}>
-                Anterior
+                Previous
               </button>
               <span>
-                Página {page} de {totalPages}
+                Page {page} of {totalPages}
               </span>
               <button type="button" disabled={loading || page >= totalPages} onClick={() => goTo(page + 1)}>
-                Siguiente
+                Next
               </button>
             </div>
           )}
