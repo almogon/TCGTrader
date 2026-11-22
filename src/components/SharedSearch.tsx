@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { formatEur, loadEpisodes, priceFor, searchCards, type SearchParams, type SortOption } from '../api';
-import type { CardInfo, EpisodeInfo, PriceLang } from '../types';
+import { PRICE_LANGS, type CardInfo, type EpisodeInfo, type PriceLang } from '../types';
 import EpisodePicker from './EpisodePicker';
+
+/** Precio en el idioma elegido; si no existe se muestra el EU, que es el que se conserva al añadir. */
+const priceShown = (c: CardInfo, lang: PriceLang) => priceFor(c, lang) ?? priceFor(c, 'EU');
 
 interface Props {
   onGive: (card: CardInfo) => void;
@@ -125,9 +128,11 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
         <label>
           Idioma del precio
           <select value={lang} onChange={(e) => onLangChange(e.target.value as PriceLang)}>
-            <option value="EU">EU</option>
-            <option value="DE">DE</option>
-            <option value="ES">ES</option>
+            {PRICE_LANGS.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
           </select>
         </label>
         <label>
@@ -174,8 +179,8 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
                       <td>{c.setName ?? '—'}</td>
                       <td>{c.cardNumber ?? '—'}</td>
                       <td>{c.rarity ?? '—'}</td>
-                      <td className={priceFor(c, lang) === null ? 'price muted' : 'price'}>
-                        {priceFor(c, lang) === null ? 'sin precio' : formatEur(priceFor(c, lang)!)}
+                      <td className={priceShown(c, lang) === null ? 'price muted' : 'price'}>
+                        {priceShown(c, lang) === null ? 'sin precio' : formatEur(priceShown(c, lang)!)}
                       </td>
                       <td className="actions">
                         <button

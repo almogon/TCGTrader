@@ -3,8 +3,8 @@ import BagColumn from './components/BagColumn';
 import SharedSearch from './components/SharedSearch';
 import TradeResults from './components/TradeResults';
 import { findTrades } from './tradeEngine';
-import { resolveBag } from './api';
-import type { Card, CardInfo, PriceLang, TradeResult } from './types';
+import { priceFor, resolveBag } from './api';
+import { isPriceLang, type Card, type CardInfo, type PriceLang, type TradeResult } from './types';
 
 const STORAGE_KEY = 'tcg-trader-state-v1';
 
@@ -23,7 +23,7 @@ function cleanCard(c: Card): Card {
   const cp = c?.customPrice;
   const ok = typeof cp === 'number' && Number.isFinite(cp) && cp > 0;
   const l = c?.lang;
-  return { ...c, customPrice: ok ? cp : null, lang: l === 'EU' || l === 'DE' || l === 'ES' ? l : undefined };
+  return { ...c, customPrice: ok ? cp : null, lang: isPriceLang(l) ? l : undefined };
 }
 
 function load(): Saved {
@@ -37,7 +37,7 @@ function load(): Saved {
       receive: Array.isArray(p.receive) ? p.receive.map(cleanCard) : [],
       tolerancePct: typeof p.tolerancePct === 'number' ? p.tolerancePct : 10,
       maxResults: typeof p.maxResults === 'number' ? p.maxResults : 10,
-      lang: p.lang === 'EU' || p.lang === 'DE' || p.lang === 'ES' ? p.lang : 'EU',
+      lang: isPriceLang(p.lang) ? p.lang : 'EU',
     };
   } catch {
     return def;
@@ -77,14 +77,25 @@ export default function App() {
   const giveP = useMemo(() => resolveBag(give), [give]);
   const receiveP = useMemo(() => resolveBag(receive), [receive]);
 
-  const add = (set: SetCards) => (info: CardInfo) =>
-    set((prev) => [...prev, { ...info, uid: newUid(), pinned: false, lang }]);
+  // Sin precio en el idioma elegido: se conserva el precio que se mostraba (EU) como precio fijado.
+  const add = (set: SetCards) => (info: CardInfo) => {
+    const kept = priceFor(info, lang) === null ? priceFor(info, 'EU') : null;
+    set((prev) => [...prev, { ...info, uid: newUid(), pinned: false, lang, customPrice: kept }]);
+  };
   const toggle = (set: SetCards) => (uid: string) =>
     set((prev) => prev.map((c) => (c.uid === uid ? { ...c, pinned: !c.pinned } : c)));
   const setPrice = (set: SetCards) => (uid: string, value: number | null) =>
     set((prev) => prev.map((c) => (c.uid === uid ? { ...c, customPrice: value } : c)));
   const setCardLang = (set: SetCards) => (uid: string, l: PriceLang) =>
-    set((prev) => prev.map((c) => (c.uid === uid ? { ...c, lang: l } : c)));
+    set((prev) =>
+      prev.map((c) => {
+        if (c.uid !== uid) return c;
+        // Sin precio en el idioma nuevo: se conserva el precio actual como precio fijado.
+        const current = resolveBag([c])[0].price;
+        const keep = priceFor(c, l) === null && current !== null;
+        return { ...c, lang: l, customPrice: keep ? current : c.customPrice };
+      }),
+    );
   const remove = (set: SetCards) => (uid: string) => set((prev) => prev.filter((c) => c.uid !== uid));
 
   function runTrade() {

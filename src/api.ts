@@ -148,7 +148,7 @@ export function loadEpisodes(force = false): Promise<EpisodeInfo[]> {
 
 /** Precio de la carta para el idioma elegido (cartas antiguas sin `prices`: usa `price`). */
 export function priceFor(card: CardInfo, lang: PriceLang): number | null {
-  return card.prices ? card.prices[lang] : card.price;
+  return card.prices ? card.prices[lang] ?? null : card.price;
 }
 
 /** Devuelve la lista con `price` resuelto: el editado si existe, si no el del idioma propio de la carta (EU por defecto). */

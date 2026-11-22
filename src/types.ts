@@ -1,7 +1,13 @@
 // Shared types between UI (P1) and trade engine (P2). Do not change without coordinating.
 
+/** Idiomas seleccionables. La API solo da precio para EU, DE y ES; CH/JA/KO nunca tienen precio propio. */
+export const PRICE_LANGS = ['EU', 'DE', 'ES', 'CH', 'JA', 'KO'] as const;
+
 /** Idioma/mercado del precio de Cardmarket. */
-export type PriceLang = 'EU' | 'DE' | 'ES';
+export type PriceLang = (typeof PRICE_LANGS)[number];
+
+export const isPriceLang = (v: unknown): v is PriceLang =>
+  typeof v === 'string' && (PRICE_LANGS as readonly string[]).includes(v);
 
 /** Card as returned by our /api/search proxy, normalized. */
 export interface CardInfo {
@@ -14,7 +20,7 @@ export interface CardInfo {
   /** Market value in EUR (Cardmarket 30d average, fallback lowest_near_mint). null = no price. */
   price: number | null;
   /** Lowest near mint price per market. Optional: old cards saved in localStorage lack it. */
-  prices?: Record<PriceLang, number | null>;
+  prices?: Partial<Record<PriceLang, number | null>>;
 }
 
 /** Collection (episode/set) as returned by our /api/episodes proxy, normalized. */

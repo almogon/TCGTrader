@@ -26,7 +26,7 @@ export function normalizeCard(raw: any): CardInfo | null {
   const name = str(raw.name);
   if (!Number.isFinite(id) || !name) return null;
   const cm = raw.prices?.cardmarket;
-  const prices: Record<PriceLang, number | null> = {
+  const prices: Partial<Record<PriceLang, number | null>> = {
     EU: positive(cm?.lowest_near_mint_EU_only),
     DE: positive(cm?.lowest_near_mint_DE),
     ES: positive(cm?.lowest_near_mint_ES),
@@ -38,7 +38,7 @@ export function normalizeCard(raw: any): CardInfo | null {
     rarity: str(raw.rarity),
     setName: str(raw.episode?.name),
     image: str(raw.image),
-    price: prices.EU,
+    price: prices.EU ?? null,
     prices,
   };
 }
