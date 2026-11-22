@@ -65,7 +65,7 @@ export default function EpisodePicker({ episodes, value, onChange, disabled }: P
             <span className="ep-name">{selected.name}</span>
           </>
         ) : (
-          <span className="ep-name">Todas las colecciones</span>
+          <span className="ep-name">All sets</span>
         )}
         <span className="ep-caret" aria-hidden="true">
           ▾
@@ -76,7 +76,7 @@ export default function EpisodePicker({ episodes, value, onChange, disabled }: P
           <input
             ref={filterRef}
             type="search"
-            placeholder="Filtrar por nombre o código…"
+            placeholder="Filter by name or code…"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
@@ -84,7 +84,7 @@ export default function EpisodePicker({ episodes, value, onChange, disabled }: P
             <li>
               <button type="button" className={value === null ? 'ep-opt active' : 'ep-opt'} onClick={() => pick(null)}>
                 <span className="ep-logo-empty" />
-                <span className="ep-name">Todas las colecciones</span>
+                <span className="ep-name">All sets</span>
               </button>
             </li>
             {visible.map((e) => (
@@ -100,7 +100,7 @@ export default function EpisodePicker({ episodes, value, onChange, disabled }: P
                 </button>
               </li>
             ))}
-            {visible.length === 0 && <li className="muted ep-none">Sin coincidencias</li>}
+            {visible.length === 0 && <li className="muted ep-none">No matches</li>}
           </ul>
         </div>
       )}

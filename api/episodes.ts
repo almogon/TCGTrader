@@ -12,7 +12,7 @@ interface VercelResponse {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
-    res.status(405).json({ error: 'Método no permitido' });
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
   const resolved = resolveHost(req.headers, process.env);

@@ -14,7 +14,7 @@ function CardList({ cards }: { cards: Card[] }) {
       {cards.map((c) => (
         <li key={c.uid}>
           <span>
-            {c.pinned && <span title="Fija">📌 </span>}
+            {c.pinned && <span title="Pinned">📌 </span>}
             {c.name} ({c.lang ?? 'EU'})
           </span>
           <span>{c.price !== null ? formatEur(c.price) : '—'}</span>
@@ -39,43 +39,43 @@ export default function TradeResults({ result, tolerancePct, stale }: Props) {
   return (
     <section className="results">
       <div className="results-head">
-        <h2>Resultados</h2>
+        <h2>Results</h2>
         {options.length > 0 && (
           <button type="button" className="no-print" disabled={selected.size === 0} onClick={() => window.print()}>
-            Descargar PDF
+            Download PDF
           </button>
         )}
       </div>
       {stale && (
-        <p className="warn">Resultados desactualizados: las cartas o los ajustes han cambiado. Pulsa Trade de nuevo.</p>
+        <p className="warn">Outdated results: the cards or settings have changed. Press Trade again.</p>
       )}
       {options.length === 0 ? (
         <p className="error">
           {error ??
             (bestDiffPct !== null
-              ? `Ninguna combinación dentro de ±${tolerancePct} %. La más cercana difiere un ${bestDiffPct.toFixed(1)} %`
-              : 'No hay combinaciones posibles.')}
+              ? `No combination within ±${tolerancePct}%. The closest differs by ${bestDiffPct.toFixed(1)}%`
+              : 'No possible combinations.')}
         </p>
       ) : (
         <div className={stale ? 'stale' : ''}>
           {options.map((o, i) => {
             const balanced = Math.abs(o.diffPct) < 0.5;
             const verdict = balanced
-              ? 'Equilibrado'
+              ? 'Balanced'
               : o.diff > 0
-                ? `Ganas ${formatEur(o.diff)}`
-                : `Pierdes ${formatEur(-o.diff)}`;
+                ? `You gain ${formatEur(o.diff)}`
+                : `You lose ${formatEur(-o.diff)}`;
             const cls = balanced ? 'even' : o.diff > 0 ? 'gain' : 'loss';
             return (
               <article key={i} className={selected.has(i) ? 'option' : 'option no-print'}>
                 <div className="option-cols">
                   <div>
-                    <h3>Doy</h3>
+                    <h3>I give</h3>
                     <CardList cards={o.give.cards} />
                     <p className="side-total">{formatEur(o.give.total)}</p>
                   </div>
                   <div>
-                    <h3>Recibo</h3>
+                    <h3>I receive</h3>
                     <CardList cards={o.receive.cards} />
                     <p className="side-total">{formatEur(o.receive.total)}</p>
                   </div>
@@ -83,11 +83,11 @@ export default function TradeResults({ result, tolerancePct, stale }: Props) {
                 <div className="option-foot no-print">
                   <p className={`verdict ${cls}`}>
                     {verdict} ({o.diff > 0 ? '+' : ''}
-                    {formatEur(o.diff)} · {o.diffPct.toFixed(1)} %)
+                    {formatEur(o.diff)} · {o.diffPct.toFixed(1)}%)
                   </p>
                   <label className="option-pick">
                     <input type="checkbox" checked={selected.has(i)} onChange={() => toggle(i)} />
-                    Descargar
+                    Download
                   </label>
                 </div>
               </article>

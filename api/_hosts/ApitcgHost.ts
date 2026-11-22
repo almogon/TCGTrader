@@ -85,7 +85,7 @@ export class ApitcgHost extends CardHost {
     if (typeof episode === "number") {
       return Promise.resolve({
         status: 400,
-        body: { error: "Colección no válida" },
+        body: { error: "Invalid set" },
       });
     }
     let url = `${BASE_URL}/api/products?tcg=pokemon&type=card`;

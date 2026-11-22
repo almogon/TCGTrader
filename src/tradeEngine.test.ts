@@ -89,14 +89,14 @@ describe('findTrades', () => {
     const r = findTrades([card(1, null)], [card(9, 10)], opts(5));
     expect(r.options).toEqual([]);
     expect(r.bestDiffPct).toBeNull();
-    expect(r.error).toBe('Cada lado necesita al menos una carta con precio');
+    expect(r.error).toBe('Each side needs at least one card with a price');
   });
 
   it('errors with more than 15 optional cards on a side', () => {
     const many = Array.from({ length: 16 }, (_, i) => card(i + 1, 1));
     const r = findTrades(many, [card(99, 5)], opts(10));
     expect(r.options).toEqual([]);
-    expect(r.error).toBe('Máximo 15 cartas opcionales por lado');
+    expect(r.error).toBe('Maximum 15 optional cards per side');
     const ok = findTrades(many.slice(0, 15), [card(99, 5)], opts(10));
     expect(ok.error).toBeNull();
   });

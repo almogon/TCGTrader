@@ -92,9 +92,9 @@ export abstract class CardHost {
         );
         const msg =
           r.status === 401 || r.status === 403
-            ? "La clave de la API no es válida"
+            ? "Invalid API key"
             : r.status === 429
-              ? "Límite de peticiones alcanzado, inténtalo más tarde"
+              ? "Rate limit reached, try again later"
               : `Error de la API (${r.status})`;
         return { status: r.status === 429 ? 429 : 502, body: { error: msg } };
       }
@@ -108,7 +108,7 @@ export abstract class CardHost {
       );
       return {
         status: 502,
-        body: { error: "No se pudo contactar con la API de cartas" },
+        body: { error: "Could not reach the card API" },
       };
     }
   }
