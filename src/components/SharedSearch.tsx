@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { formatEur, loadEpisodes, priceFor, searchCards, type SearchParams, type SortOption } from '../api';
 import { PRICE_LANGS, type CardInfo, type EpisodeInfo, type PriceLang } from '../types';
+import AuthModal from './AuthModal';
 import EpisodePicker from './EpisodePicker';
 
 /** Precio en el idioma elegido; si no existe se muestra el EU, que es el que se conserva al añadir. */
@@ -32,9 +33,15 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
   const abortRef = useRef<AbortController | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authVersion, setAuthVersion] = useState(0);
+
   useEffect(() => {
     let alive = true;
-    loadEpisodes()
+    setEpisodesLoading(true);
+    setEpisodesError(null);
+    // Tras cambiar credenciales solo se fuerza la descarga si antes no había colecciones.
+    loadEpisodes(authVersion > 0 && episodes.length === 0)
       .then((list) => {
         if (alive) setEpisodes(list);
       })
@@ -47,7 +54,8 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
     return () => {
       alive = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authVersion]);
 
   useEffect(
     () => () => {
@@ -100,7 +108,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
 
   return (
     <section className="shared-search">
-      <form className="search-form" onSubmit={onSubmit}>
+      <form id="shared-search-form" className="search-form" onSubmit={onSubmit}>
         <label>
           Carta
           <input
@@ -143,10 +151,16 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
             <option value="price_lowest">Precio: menor primero</option>
           </select>
         </label>
-        <button type="submit" className="primary" disabled={!canSearch}>
+      </form>
+      <div className="search-actions">
+        <button type="submit" form="shared-search-form" className="primary" disabled={!canSearch}>
           {loading ? 'Buscando…' : 'Buscar'}
         </button>
-      </form>
+        <button type="button" onClick={() => setAuthOpen(true)}>
+          Authenticate
+        </button>
+      </div>
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onSaved={() => setAuthVersion((v) => v + 1)} />
 
       {sent && (
         <div className="results-box">

@@ -17,6 +17,43 @@ export interface SearchParams {
 
 const cache = new Map<string, SearchPage>();
 
+/** Credenciales propias guardadas desde el modal "Authenticate"; vacías = las del servidor. */
+export interface AuthSettings {
+  host: string;
+  key: string;
+}
+
+const AUTH_KEY = 'tcg-trader-auth-v1';
+
+export function loadAuth(): AuthSettings {
+  try {
+    const p = JSON.parse(localStorage.getItem(AUTH_KEY) ?? 'null') as Partial<AuthSettings> | null;
+    return { host: typeof p?.host === 'string' ? p.host : '', key: typeof p?.key === 'string' ? p.key : '' };
+  } catch {
+    return { host: '', key: '' };
+  }
+}
+
+/** Sobrescribe las credenciales guardadas (si ambas quedan vacías, se borran) y vacía la caché de búsquedas. */
+export function saveAuth(auth: AuthSettings) {
+  const clean = { host: auth.host.trim(), key: auth.key.trim() };
+  try {
+    if (clean.host || clean.key) localStorage.setItem(AUTH_KEY, JSON.stringify(clean));
+    else localStorage.removeItem(AUTH_KEY);
+  } catch {
+    /* almacenamiento no disponible */
+  }
+  cache.clear();
+}
+
+function authHeaders(): Record<string, string> {
+  const { host, key } = loadAuth();
+  const h: Record<string, string> = {};
+  if (host) h['x-tcg-host'] = host;
+  if (key) h['x-tcg-key'] = key;
+  return h;
+}
+
 export async function searchCards(params: SearchParams, signal?: AbortSignal): Promise<SearchPage> {
   const q = params.q.trim();
   const { episode, sort, page } = params;
@@ -33,7 +70,7 @@ export async function searchCards(params: SearchParams, signal?: AbortSignal): P
   if (episode !== null) qs.set('episode', String(episode));
   qs.set('sort', sort);
   qs.set('page', String(page));
-  const r = await fetch(`/api/search?${qs.toString()}`, { signal });
+  const r = await fetch(`/api/search?${qs.toString()}`, { signal, headers: authHeaders() });
   let body: unknown = null;
   try {
     body = await r.json();
@@ -86,7 +123,7 @@ interface EpisodesPage {
 }
 
 async function fetchEpisodesPage(page: number): Promise<EpisodesPage> {
-  const r = await fetch(`/api/episodes?page=${page}`);
+  const r = await fetch(`/api/episodes?page=${page}`, { headers: authHeaders() });
   let body: unknown = null;
   try {
     body = await r.json();

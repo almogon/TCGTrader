@@ -34,7 +34,16 @@ ul { list-style: none; margin: 0; padding: 0; }
 .search-form > * { min-width: 0; }
 .search-form label, .search-form .field { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
 .search-form input, .search-form select { padding: 6px 8px; }
-.search-form button.primary { grid-column: 1 / -1; justify-self: start; padding: 7px 18px; }
+.search-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.search-actions button.primary { padding: 7px 18px; }
+.auth-modal { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); color: var(--text); padding: 16px; width: min(420px, calc(100vw - 32px)); }
+.auth-modal::backdrop { background: rgb(0 0 0 / .45); }
+.auth-modal form { display: flex; flex-direction: column; gap: 10px; }
+.auth-modal p { margin: 0; font-size: 13px; }
+.auth-modal label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.auth-actions { display: flex; gap: 8px; margin-top: 4px; }
+.auth-actions .spacer { flex: 1; }
+button.danger { color: var(--bad); }
 .lang-select { width: auto; padding: 2px 4px; font-size: 12px; flex: none; }
 @media (max-width: 600px) { .search-form { grid-template-columns: 1fr; } }
 .field-label { font-size: 13px; color: var(--muted); }

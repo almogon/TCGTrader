@@ -1,6 +1,42 @@
 import type { CardInfo, EpisodeInfo, PriceLang } from "../src/types";
 
-const HOST = "pokemon-tcg-api.p.rapidapi.com";
+export const DEFAULT_HOST = "pokemon-tcg-api.p.rapidapi.com";
+
+/** RapidAPI credentials used for one upstream call. */
+export interface Credentials {
+  key: string;
+  host: string;
+}
+
+// Only RapidAPI hosts are accepted so the function cannot be used as an open proxy.
+const HOST_RE = /^[a-z0-9-]+(.[a-z0-9-]+)*.rapidapi.com$/i;
+
+/**
+ * Picks the credentials for a request: `x-tcg-key` / `x-tcg-host` headers sent by the browser
+ * (set in the "Authenticate" modal) override the server's RAPIDAPI_KEY and the default host.
+ */
+export function resolveCredentials(
+  headers: Record<string, string | string[] | undefined>,
+  envKey: string | undefined,
+): Credentials | { error: string; status: number } {
+  const one = (v: string | string[] | undefined) =>
+    (Array.isArray(v) ? v[0] : v)?.trim() || "";
+  const host = one(headers["x-tcg-host"]) || DEFAULT_HOST;
+  if (host.length > 253 || !HOST_RE.test(host)) {
+    return {
+      status: 400,
+      error: "Host no válido (debe ser un dominio *.rapidapi.com)",
+    };
+  }
+  const key = one(headers["x-tcg-key"]) || envKey || "";
+  if (!key) {
+    return {
+      status: 500,
+      error: "Falta la API key: configúrala en Authenticate o en RAPIDAPI_KEY",
+    };
+  }
+  return { key, host };
+}
 
 export interface SearchResponse {
   cards: CardInfo[];
@@ -104,7 +140,7 @@ function parsePage(pageParam: string | null | undefined): number {
 /** Validates params, calls the TCGGO API and returns the normalized response. */
 export async function handleSearch(
   params: SearchParams,
-  apiKey: string,
+  { key: apiKey, host: HOST }: Credentials,
 ): Promise<HandlerResult> {
   const query = (params.q ?? "").trim();
   if (query && (query.length < 2 || query.length > 60)) {
@@ -192,7 +228,7 @@ export async function handleSearch(
 /** Calls the TCGGO episodes endpoint (one page) and returns the normalized response. */
 export async function handleEpisodes(
   pageParam: string | null | undefined,
-  apiKey: string,
+  { key: apiKey, host: HOST }: Credentials,
 ): Promise<EpisodesHandlerResult> {
   const page = parsePage(pageParam);
   const url = `https://${HOST}/episodes?page=${page}`;
