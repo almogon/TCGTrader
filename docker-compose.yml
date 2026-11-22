@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    image: tcg-trader:local
+    container_name: tcg-trader
+    restart: unless-stopped
+    # Only reachable from this machine (loopback), not from the local network.
+    ports:
+      - "127.0.0.1:5173:5173"
+    # RAPIDAPI_KEY is read at runtime from .env.local (git-ignored, never copied into the image).
+    env_file:
+      - .env.local
+    # Hardening: no host mounts, non-root user (Dockerfile), read-only filesystem, no extra privileges.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
