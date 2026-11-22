@@ -1,4 +1,4 @@
-import { handleSearch, resolveCredentials } from './_normalize.js';
+import { handleSearch, resolveHost } from './_core.js';
 
 // Minimal shapes of Vercel's Node runtime req/res (avoids the vulnerable @vercel/node dev dependency).
 interface VercelRequest {
@@ -15,9 +15,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ error: 'Método no permitido' });
     return;
   }
-  const creds = resolveCredentials(req.headers, process.env.RAPIDAPI_KEY);
-  if ('error' in creds) {
-    res.status(creds.status).json({ error: creds.error });
+  const resolved = resolveHost(req.headers, process.env);
+  if ('error' in resolved) {
+    res.status(resolved.status).json({ error: resolved.error });
     return;
   }
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
@@ -28,7 +28,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sort: one(req.query.sort),
       page: one(req.query.page),
     },
-    creds,
+    resolved.host,
+    resolved.key,
   );
   res.status(out.status).json(out.body);
 }

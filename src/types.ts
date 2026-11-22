@@ -25,7 +25,7 @@ export interface CardInfo {
 
 /** Collection (episode/set) as returned by our /api/episodes proxy, normalized. */
 export interface EpisodeInfo {
-  id: number;
+  id: string | number;
   name: string;
   code: string | null;
   logo: string | null;

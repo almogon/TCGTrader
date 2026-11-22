@@ -1,4 +1,7 @@
+import { DEFAULT_HOST_ID, HOST_CATALOG, isHostId, type HostId, type HostInfo, type SortOption } from './hostCatalog';
 import type { CardInfo, EpisodeInfo, PriceLang } from './types';
+
+export type { SortOption };
 
 export interface SearchPage {
   cards: CardInfo[];
@@ -6,50 +9,94 @@ export interface SearchPage {
   totalPages: number;
 }
 
-export type SortOption = 'relevance' | 'price_highest' | 'price_lowest';
-
 export interface SearchParams {
   q: string;
-  episode: number | null;
+  episode: string | number | null;
   sort: SortOption;
   page: number;
 }
 
 const cache = new Map<string, SearchPage>();
 
-/** Credenciales propias guardadas desde el modal "Authenticate"; vacías = las del servidor. */
+/** Host elegido y API keys propias (una por host) guardadas desde el modal "Authenticate"; sin key = la del servidor. */
 export interface AuthSettings {
-  host: string;
-  key: string;
+  hostId: HostId;
+  keys: Partial<Record<HostId, string>>;
 }
 
-const AUTH_KEY = 'tcg-trader-auth-v1';
+const AUTH_KEY = 'tcg-trader-auth-v2';
+const AUTH_KEY_V1 = 'tcg-trader-auth-v1';
+const V1_DEFAULT_HOST = 'pokemon-tcg-api.p.rapidapi.com';
+
+function cleanKeys(raw: unknown): Partial<Record<HostId, string>> {
+  const keys: Partial<Record<HostId, string>> = {};
+  if (raw && typeof raw === 'object') {
+    for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (isHostId(id) && typeof v === 'string' && v.trim()) keys[id] = v.trim();
+    }
+  }
+  return keys;
+}
+
+/** Migra el formato v1 ({host, key}) al v2: solo se conserva la key si el host era vacío o el de TCGGO. */
+export function migrateAuthV1(raw: unknown): AuthSettings {
+  const p = raw && typeof raw === 'object' ? (raw as { host?: unknown; key?: unknown }) : {};
+  const host = typeof p.host === 'string' ? p.host.trim() : '';
+  const key = typeof p.key === 'string' ? p.key.trim() : '';
+  const keys: Partial<Record<HostId, string>> = {};
+  if ((host === '' || host === V1_DEFAULT_HOST) && key) keys.tcggo = key;
+  return { hostId: DEFAULT_HOST_ID, keys };
+}
 
 export function loadAuth(): AuthSettings {
   try {
-    const p = JSON.parse(localStorage.getItem(AUTH_KEY) ?? 'null') as Partial<AuthSettings> | null;
-    return { host: typeof p?.host === 'string' ? p.host : '', key: typeof p?.key === 'string' ? p.key : '' };
+    const v2 = localStorage.getItem(AUTH_KEY);
+    if (v2) {
+      const p = JSON.parse(v2) as { hostId?: unknown; keys?: unknown } | null;
+      return { hostId: isHostId(p?.hostId) ? p.hostId : DEFAULT_HOST_ID, keys: cleanKeys(p?.keys) };
+    }
+    const v1 = localStorage.getItem(AUTH_KEY_V1);
+    if (v1) {
+      let parsed: unknown = null;
+      try {
+        parsed = JSON.parse(v1);
+      } catch {
+        /* v1 corrupto: se descarta */
+      }
+      const migrated = migrateAuthV1(parsed);
+      localStorage.setItem(AUTH_KEY, JSON.stringify(migrated));
+      localStorage.removeItem(AUTH_KEY_V1);
+      return migrated;
+    }
   } catch {
-    return { host: '', key: '' };
+    /* almacenamiento no disponible o JSON corrupto */
   }
+  return { hostId: DEFAULT_HOST_ID, keys: {} };
 }
 
-/** Sobrescribe las credenciales guardadas (si ambas quedan vacías, se borran) y vacía la caché de búsquedas. */
+/** Sobrescribe el host y las keys guardados (se descartan las vacías) y vacía la caché de búsquedas. */
 export function saveAuth(auth: AuthSettings) {
-  const clean = { host: auth.host.trim(), key: auth.key.trim() };
+  const clean: AuthSettings = {
+    hostId: isHostId(auth.hostId) ? auth.hostId : DEFAULT_HOST_ID,
+    keys: cleanKeys(auth.keys),
+  };
   try {
-    if (clean.host || clean.key) localStorage.setItem(AUTH_KEY, JSON.stringify(clean));
-    else localStorage.removeItem(AUTH_KEY);
+    localStorage.setItem(AUTH_KEY, JSON.stringify(clean));
   } catch {
     /* almacenamiento no disponible */
   }
   cache.clear();
 }
 
+/** Información y capacidades del host elegido actualmente. */
+export function currentHost(): HostInfo {
+  return HOST_CATALOG[loadAuth().hostId];
+}
+
 function authHeaders(): Record<string, string> {
-  const { host, key } = loadAuth();
-  const h: Record<string, string> = {};
-  if (host) h['x-tcg-host'] = host;
+  const { hostId, keys } = loadAuth();
+  const h: Record<string, string> = { 'x-tcg-host': hostId };
+  const key = keys[hostId];
   if (key) h['x-tcg-key'] = key;
   return h;
 }
@@ -57,7 +104,7 @@ function authHeaders(): Record<string, string> {
 export async function searchCards(params: SearchParams, signal?: AbortSignal): Promise<SearchPage> {
   const q = params.q.trim();
   const { episode, sort, page } = params;
-  const key = `${q.toLowerCase()}|${episode ?? ''}|${sort}|${page}`;
+  const key = `${loadAuth().hostId}|${q.toLowerCase()}|${episode ?? ''}|${sort}|${page}`;
   const label = `"${q}" col=${episode ?? '-'} ${sort} p${page}`;
   const hit = cache.get(key);
   if (hit) {
@@ -88,7 +135,8 @@ export async function searchCards(params: SearchParams, signal?: AbortSignal): P
   return data;
 }
 
-const EPISODES_KEY = 'tcg-trader-episodes-v1';
+const EPISODES_KEY_PREFIX = 'tcg-trader-episodes-v2-';
+const EPISODES_KEY_V1 = 'tcg-trader-episodes-v1';
 const EPISODES_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface SavedEpisodes {
@@ -96,9 +144,9 @@ interface SavedEpisodes {
   episodes: EpisodeInfo[];
 }
 
-function readSavedEpisodes(): SavedEpisodes | null {
+function readSavedEpisodes(hostId: HostId): SavedEpisodes | null {
   try {
-    const raw = localStorage.getItem(EPISODES_KEY);
+    const raw = localStorage.getItem(EPISODES_KEY_PREFIX + hostId);
     if (!raw) return null;
     const p = JSON.parse(raw) as Partial<SavedEpisodes>;
     if (typeof p.savedAt !== 'number' || !Array.isArray(p.episodes)) return null;
@@ -108,9 +156,9 @@ function readSavedEpisodes(): SavedEpisodes | null {
   }
 }
 
-function writeSavedEpisodes(episodes: EpisodeInfo[]) {
+function writeSavedEpisodes(hostId: HostId, episodes: EpisodeInfo[]) {
   try {
-    localStorage.setItem(EPISODES_KEY, JSON.stringify({ savedAt: Date.now(), episodes }));
+    localStorage.setItem(EPISODES_KEY_PREFIX + hostId,JSON.stringify({ savedAt: Date.now(), episodes }));
   } catch {
     /* almacenamiento no disponible */
   }
@@ -154,19 +202,28 @@ async function downloadEpisodes(): Promise<EpisodeInfo[]> {
   return all;
 }
 
-let episodesInFlight: Promise<EpisodeInfo[]> | null = null;
+const episodesInFlight = new Map<HostId, Promise<EpisodeInfo[]>>();
 
 export function loadEpisodes(force = false): Promise<EpisodeInfo[]> {
-  const saved = readSavedEpisodes();
+  const host = currentHost();
+  if (!host.capabilities.episodes) return Promise.resolve([]);
+  const hostId = host.id;
+  try {
+    localStorage.removeItem(EPISODES_KEY_V1);
+  } catch {
+    /* almacenamiento no disponible */
+  }
+  const saved = readSavedEpisodes(hostId);
   if (!force && saved && Date.now() - saved.savedAt < EPISODES_TTL_MS) {
     console.debug(`[episodes] caché local · ${saved.episodes.length} colecciones`);
     return Promise.resolve(saved.episodes);
   }
-  if (episodesInFlight) return episodesInFlight;
-  episodesInFlight = (async () => {
+  const pending = episodesInFlight.get(hostId);
+  if (pending) return pending;
+  const run = (async () => {
     try {
       const episodes = await downloadEpisodes();
-      writeSavedEpisodes(episodes);
+      writeSavedEpisodes(hostId, episodes);
       return episodes;
     } catch (e) {
       if (saved) {
@@ -177,10 +234,11 @@ export function loadEpisodes(force = false): Promise<EpisodeInfo[]> {
       }
       throw e;
     } finally {
-      episodesInFlight = null;
+      episodesInFlight.delete(hostId);
     }
   })();
-  return episodesInFlight;
+  episodesInFlight.set(hostId, run);
+  return run;
 }
 
 /** Precio de la carta para el idioma elegido (cartas antiguas sin `prices`: usa `price`). */
