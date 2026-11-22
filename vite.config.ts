@@ -45,5 +45,7 @@ function apiPlugin(mode: string): Plugin {
 }
 
 export default defineConfig(({ mode }) => ({
+  // Relative asset paths so the same build works at the root and behind a sub-path proxy.
+  base: './',
   plugins: [react(), apiPlugin(mode)],
 }));
