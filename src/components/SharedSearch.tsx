@@ -197,7 +197,7 @@ export default function SharedSearch({ onGive, onReceive, lang, onLangChange }: 
         <button type="submit" form="shared-search-form" className="primary" disabled={!canSearch}>
           {loading ? 'Searching…' : 'Search'}
         </button>
-        <button type="button" onClick={() => setAuthOpen(true)}>
+        <button type="button" className="auth" onClick={() => setAuthOpen(true)}>
           Authenticate
         </button>
       </div>
