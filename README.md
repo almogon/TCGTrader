@@ -26,6 +26,22 @@ El servidor de Vite atiende `/api/search` y `/api/episodes` con el mismo código
 - `npm run preview`: sirve el build.
 - `npm test`: tests (vitest).
 
+## Docker (siempre activo en localhost)
+
+Requiere Docker Desktop y el archivo `.env.local` con `RAPIDAPI_KEY` (ver arriba).
+
+```
+docker compose up -d --build
+```
+
+La app queda en http://localhost:5173 y se reinicia sola (`restart: unless-stopped`). Para que arranque con el sistema, activa en Docker Desktop *Settings > General > Start Docker Desktop when you sign in*.
+
+- Aplicar cambios del código: el mismo comando (`docker compose up -d --build`).
+- Ver logs: `docker compose logs -f`.
+- Parar: `docker compose down`.
+
+Seguridad: la clave no se copia en la imagen (se pasa al arrancar desde `.env.local`), el puerto solo escucha en `127.0.0.1` y el contenedor corre sin root, con sistema de archivos de solo lectura y sin montar carpetas del equipo.
+
 ## Despliegue en Vercel
 
 1. Importa el repositorio en Vercel (preset Vite).
