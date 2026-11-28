@@ -103,6 +103,13 @@ export default function App() {
     setSnapshot(currentKey);
   }
 
+  function clearAll() {
+    setGive([]);
+    setReceive([]);
+    setResult(null);
+    setSnapshot('');
+  }
+
   return (
     <div className="app">
       <header>
@@ -145,6 +152,9 @@ export default function App() {
               onChange={(e) => setMaxResults(clamp(Math.round(Number(e.target.value)) || 1, 1, 50))}
             />
           </label>
+          <button type="button" className="danger" onClick={clearAll}>
+            Clear
+          </button>
         </div>
         <BagColumn
           title="I receive"
